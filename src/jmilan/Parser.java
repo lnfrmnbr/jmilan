@@ -2,6 +2,8 @@ package jmilan;
 
 import java.io.PrintStream;
 import java.util.Hashtable;
+import java.util.Objects;
+import java.util.Vector;
 
 /**
  * Синтаксический анализатор языка Милан.
@@ -167,7 +169,7 @@ public class Parser {
                 // Код: теперь известен адрес начала блока ELSE, заполним
                 // зарезервированное место после проверки условия инструкцией
                 // перехода.
-                
+
                 emitter.emitAt(jump_no, CodeEmitter.Opcode.JUMP_NO, emitter.getCurrentAddress());
                 statementList();
 
@@ -208,6 +210,78 @@ public class Parser {
             expression();
             mustBe(Token.RPAREN);
             emitter.emit(CodeEmitter.Opcode.PRINT);
+        }
+
+        else if (match(Token.SWITCH)) {
+            mustBe(Token.LPAREN);
+            expression();
+
+            int switchExprTemp = getTempVar();
+            emitter.emit(CodeEmitter.Opcode.STORE, switchExprTemp);
+
+            mustBe(Token.RPAREN);
+            mustBe(Token.BEGIN);
+
+            Vector<Integer> jumpToEnd = new Vector<>();
+
+            while (match(Token.CASE)) {
+                emitter.emit(CodeEmitter.Opcode.LOAD, switchExprTemp);
+
+                expression();
+                emitter.emit(CodeEmitter.Opcode.COMPARE, emitter.relationCode(Cmp.EQ));
+
+                int jump_no = emitter.makeHole();
+
+                mustBe(Token.COLON);
+                statementList();
+                jumpToEnd.add(emitter.makeHole());
+
+                emitter.emitAt(jump_no, CodeEmitter.Opcode.JUMP_NO, emitter.getCurrentAddress());
+                match(Token.BREAK);
+                match(Token.SEMICOLON);
+            }
+
+            if (match(Token.DEFAULT)) {
+                mustBe(Token.COLON);
+                statementList();
+            }
+
+            mustBe(Token.ENDCASE);
+
+            for (int jump : jumpToEnd) {
+                emitter.emitAt(jump, CodeEmitter.Opcode.JUMP, emitter.getCurrentAddress());
+            }
+        }
+
+        else if (match(Token.INCREMENT)) {
+            if (!Objects.equals(input.stringValue(), null)) {
+                int addr = getVariableAddress(input.stringValue());
+                input.nextToken();
+                emitter.emit(CodeEmitter.Opcode.LOAD, addr);
+                emitter.emit(CodeEmitter.Opcode.PUSH, 1);
+                emitter.emit(CodeEmitter.Opcode.ADD);
+                emitter.emit(CodeEmitter.Opcode.DUP);
+                emitter.emit(CodeEmitter.Opcode.STORE, addr);
+            } else {
+                this.error = true;
+                reportError("Unknown variable.",
+                        input.token().toString());
+            }
+        }
+        else if (match(Token.DECREMENT)) {
+            if (!Objects.equals(input.stringValue(), null)){
+                int addr = getVariableAddress(input.stringValue());
+                input.nextToken();
+                emitter.emit(CodeEmitter.Opcode.LOAD, addr);
+                emitter.emit(CodeEmitter.Opcode.PUSH, 1);
+                emitter.emit(CodeEmitter.Opcode.SUB);
+                emitter.emit(CodeEmitter.Opcode.DUP);
+                emitter.emit(CodeEmitter.Opcode.STORE, addr);
+            } else {
+                this.error = true;
+                reportError("Unknown variable.",
+                        input.token().toString());
+            }
         }
         else {
             this.error = true;
@@ -399,6 +473,10 @@ public class Parser {
             variables.put(name, Integer.valueOf(nextVariableAddress));
             return nextVariableAddress++;
         }
+    }
+
+    int getTempVar() {
+        return 99;
     }
 
     private Scanner input; // Объект лексического анализатора

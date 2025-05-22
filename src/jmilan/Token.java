@@ -23,4 +23,13 @@ public enum Token {
     LPAREN,     // Открывающая скобка
     RPAREN,     // Закрывающая скобка
     SEMICOLON,   // ";"
+    SWITCH,
+    CASE,
+    DEFAULT,
+    BREAK,
+    ENDCASE,
+    COMMA,
+    COLON,
+    INCREMENT,
+    DECREMENT
 }

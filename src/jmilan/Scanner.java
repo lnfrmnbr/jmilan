@@ -26,6 +26,11 @@ public class Scanner {
         this.keywords.put("od", Token.OD);
         this.keywords.put("write", Token.WRITE);
         this.keywords.put("read", Token.READ);
+        this.keywords.put("switch", Token.SWITCH);
+        this.keywords.put("case", Token.CASE);
+        this.keywords.put("default", Token.DEFAULT);
+        this.keywords.put("break", Token.BREAK);
+        this.keywords.put("endcase", Token.ENDCASE);
 
         nextChar();       
     }
@@ -114,8 +119,14 @@ public class Scanner {
                 token = keywords.get(identifier);
             }
             else {
-                token = Token.IDENTIFIER;
-                strval = identifier;
+                if (ch == '+'){
+                    token = Token.INCREMENT;
+                } else if (ch == '-'){
+                    token = Token.DECREMENT;
+                } else {
+                    token = Token.IDENTIFIER;
+                    strval = identifier;
+                }
             }
         }
         else {
@@ -141,9 +152,8 @@ public class Scanner {
                         nextChar();
                         token = Token.ASSIGN;
                     } else {
-                        reportError("':=' expected, but ':' found");
                         nextChar();
-                        token = Token.ILLEGAL;
+                        token = Token.COLON;
                     }
                     break;
 
@@ -190,14 +200,24 @@ public class Scanner {
 
                 case '+':
                     nextChar();
-                    token = Token.ADDOP;
-                    arithval = Arithmetic.PLUS;
+                    if (ch == '+') {
+                        nextChar();
+                        token = Token.INCREMENT;
+                    } else {
+                        token = Token.ADDOP;
+                        arithval = Arithmetic.PLUS;
+                    }
                     break;
 
                 case '-':
                     nextChar();
-                    token = Token.ADDOP;
-                    arithval = Arithmetic.MINUS;
+                    if (ch == '-') {
+                        nextChar();
+                        token = Token.DECREMENT;
+                    } else {
+                        token = Token.ADDOP;
+                        arithval = Arithmetic.MINUS;
+                    }
                     break;
 
                 case '*':
@@ -210,6 +230,11 @@ public class Scanner {
                     nextChar();
                     token = Token.MULOP;
                     arithval = Arithmetic.DIVIDE;
+                    break;
+
+                case ',':
+                    nextChar();
+                    token = Token.COMMA;
                     break;
 
                 case EOF:

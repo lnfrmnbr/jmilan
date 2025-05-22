@@ -1,8 +1,5 @@
 BEGIN
-        switch(x)
-        begin
-            case 1: write(1), write(3) break;
-            case 2: write(2) break;
-            default: write(0)
-        endcase
+        x := 3;
+        x++;
+        write(x)
 END
